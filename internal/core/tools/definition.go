@@ -1,4 +1,4 @@
-package definition
+package tools
 
 import (
 	"embed"
