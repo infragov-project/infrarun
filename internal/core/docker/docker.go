@@ -3,7 +3,6 @@ package docker
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"log"
 
@@ -86,17 +85,11 @@ func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo
 
 	statusCh, errCh := engine.Client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
 
-	var waitResp container.WaitResponse
-
 	select {
 	case error := <-errCh: // Got error from ContainerWait
 		return error
-	case waitResp = <-statusCh:
+	case <-statusCh:
+		return nil
 	}
 
-	if waitResp.StatusCode == 0 {
-		return nil
-	} else {
-		return fmt.Errorf("Container exited with code %d", waitResp.StatusCode)
-	}
 }

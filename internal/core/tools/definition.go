@@ -2,11 +2,12 @@ package tools
 
 import (
 	"embed"
-	"gopkg.in/yaml.v3"
 	"io/fs"
+
+	"gopkg.in/yaml.v3"
 )
 
-type toolDefinition struct {
+type ToolDefinition struct {
 	Name       string   `yaml:"name"`
 	Image      string   `yaml:"image"`
 	Cmd        []string `yaml:"cmd"`
@@ -18,13 +19,13 @@ type toolDefinition struct {
 //go:embed definitions/*.yaml
 var embedTools embed.FS
 
-func GetEmbedToolDefinitions() []toolDefinition {
+func GetEmbedToolDefinitions() map[string]ToolDefinition {
+	definitions := make(map[string]ToolDefinition)
+
 	fileNames, err := fs.Glob(embedTools, "definitions/*.yaml")
 
-	var definitions []toolDefinition
-
 	if err != nil {
-		return []toolDefinition{}
+		return definitions
 	}
 
 	for _, fileName := range fileNames {
@@ -34,7 +35,7 @@ func GetEmbedToolDefinitions() []toolDefinition {
 			continue
 		}
 
-		var definition toolDefinition
+		var definition ToolDefinition
 
 		err = yaml.Unmarshal(yamlContent, &definition)
 
@@ -42,7 +43,7 @@ func GetEmbedToolDefinitions() []toolDefinition {
 			continue
 		}
 
-		definitions = append(definitions, definition)
+		definitions[definition.Name] = definition
 	}
 
 	return definitions

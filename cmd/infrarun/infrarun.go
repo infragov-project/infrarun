@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-
-	"github.com/infragov-project/infrarun/internal/core/docker"
+	"github.com/infragov-project/infrarun/internal/core/engine"
 	"github.com/infragov-project/infrarun/internal/core/tools"
 )
 
@@ -16,7 +14,7 @@ func main() {
 		fmt.Println(def)
 	}
 
-	eng, err := docker.NewDockerEngine()
+	eng, err := engine.NewInfrarunEngine()
 
 	if err != nil {
 		panic(err)
@@ -24,31 +22,19 @@ func main() {
 
 	ctx := context.Background()
 
-	err = eng.EnsureImageExists(ctx, "checkmarx/kics:latest")
+	tool := tools.GetEmbedToolDefinitions()["KICS"]
+
+	execution, err := engine.NewToolExecution(&tool, ".")
 
 	if err != nil {
 		panic(err)
 	}
 
-	cwdAbs, err := filepath.Abs(".")
+	content, err := eng.Execute(ctx, execution)
 
 	if err != nil {
 		panic(err)
 	}
 
-	err = eng.RunContainer(ctx, docker.ContainerInfo{
-		Image: "checkmarx/kics:latest",
-		Cmd:   []string{"scan", "-p", "/input", "-o", "/output"},
-		VolumeBinds: []docker.VolumeBind{{
-			Host:  cwdAbs,
-			Guest: "/input",
-		}},
-	})
-
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Done!")
-
+	fmt.Println(string(content))
 }
