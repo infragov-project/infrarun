@@ -89,8 +89,6 @@ func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo
 	var waitResp container.WaitResponse
 
 	select {
-	case <-ctx.Done(): // Interrupted by context
-		return ctx.Err()
 	case error := <-errCh: // Got error from ContainerWait
 		return error
 	case waitResp = <-statusCh:
