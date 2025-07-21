@@ -39,7 +39,7 @@ func main() {
 	err = eng.RunContainer(ctx, docker.ContainerInfo{
 		Image: "checkmarx/kics:latest",
 		Cmd:   []string{"scan", "-p", "/input", "-o", "/output"},
-		VolumeBinds: []docker.VolumeBind{docker.VolumeBind{
+		VolumeBinds: []docker.VolumeBind{{
 			Host:  cwdAbs,
 			Guest: "/input",
 		}},
