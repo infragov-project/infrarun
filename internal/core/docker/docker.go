@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"log"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -32,7 +31,15 @@ func (engine *DockerEngine) EnsureImageExists(ctx context.Context, imageName str
 	reader, err := engine.Client.ImagePull(ctx, imageName, image.PullOptions{})
 
 	if err != nil {
-		log.Fatal(err)
+		// Initial pull failled, check if image exists locally
+
+		_, inspectErr := engine.Client.ImageInspect(ctx, imageName)
+
+		if inspectErr == nil {
+			return nil // Image exists locally
+		}
+
+		return err
 	}
 
 	defer reader.Close()
