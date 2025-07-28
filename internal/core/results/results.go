@@ -13,7 +13,7 @@ func MergeReports(reports []*sarif.Report) *sarif.Report {
 
 	for _, rep := range reports {
 		for _, run := range rep.Runs {
-			rep.AddRun(run)
+			merged.AddRun(run)
 		}
 	}
 
