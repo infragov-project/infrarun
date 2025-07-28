@@ -102,7 +102,6 @@ func runRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
