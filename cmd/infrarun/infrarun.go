@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/infragov-project/infrarun/internal/core/engine"
+	"github.com/infragov-project/infrarun/internal/core/results"
 	"github.com/infragov-project/infrarun/internal/core/tools"
 )
 
@@ -36,5 +39,19 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(string(content))
+	rep, err := results.ParseReport(content)
+
+	if err != nil {
+		panic(err)
+	}
+
+	results.ReplaceFilePaths(rep, map[string]string{
+		"../../input/": "./",
+	})
+
+	err = rep.PrettyWrite(os.Stdout)
+
+	if err != nil {
+		panic(err)
+	}
 }
