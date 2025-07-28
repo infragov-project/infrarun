@@ -52,7 +52,7 @@ func runRun(cmd *cobra.Command, args []string) {
 
 	for _, exec := range execs {
 		wg.Add(1)
-		pBar := progressBars.AddBar(100, mpb.PrependDecorators(decor.Name(exec.Tool.Name)))
+		pBar := progressBars.AddBar(100, mpb.PrependDecorators(decor.Name(exec.Tool.Name)), mpb.AppendDecorators(decor.Percentage()))
 
 		go func() {
 			defer wg.Done()
