@@ -95,9 +95,13 @@ func runRun(cmd *cobra.Command, args []string) {
 
 	finalReport := results.MergeReports(resultList)
 
-	finalReport.PrettyWrite(os.Stdout)
+	err = finalReport.PrettyWrite(os.Stdout)
 
+	if err != nil {
+		panic(err)
+	}
 }
+
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{

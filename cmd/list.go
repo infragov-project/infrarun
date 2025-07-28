@@ -23,17 +23,28 @@ func runList(cmd *cobra.Command, args []string) {
 		table.Header("Name", "Image")
 
 		for _, tool := range t {
-			table.Append(tool.Name, tool.Image)
+			err = table.Append(tool.Name, tool.Image)
+			if err != nil {
+				panic(err)
+			}
 		}
 	} else {
 		table.Header("Name")
 
 		for _, tool := range t {
-			table.Append(tool.Name)
+			err = table.Append(tool.Name)
+
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
-	table.Render()
+	err = table.Render()
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 var listCmd = &cobra.Command{
