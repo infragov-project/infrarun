@@ -47,7 +47,7 @@ func runRun(cmd *cobra.Command, args []string) {
 
 	resultCh := make(chan *sarif.Report, len(execs))
 	errCh := make(chan error, len(execs))
-	progressBars := mpb.New()
+	progressBars := mpb.New(mpb.WithOutput(os.Stderr))
 	var wg sync.WaitGroup
 
 	for _, exec := range execs {
