@@ -20,16 +20,6 @@ func MergeReports(reports []*sarif.Report) *sarif.Report {
 	return merged
 }
 
-func ParseReport(content []byte) (*sarif.Report, error) {
-	parsed, err := sarif.FromBytes(content)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return parsed, nil
-}
-
 func ReplaceFilePaths(report *sarif.Report, prefixMap map[string]string) {
 	for _, run := range report.Runs {
 
