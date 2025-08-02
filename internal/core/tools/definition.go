@@ -14,6 +14,7 @@ type ToolDefinition struct {
 	InputPath  string   `yaml:"input_path"`
 	OutputPath string   `yaml:"output_path"`
 	OutputFile string   `yaml:"output_file"`
+	Parser     string   `yaml:"parser"`
 }
 
 //go:embed definitions/*.yaml

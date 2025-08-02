@@ -4,3 +4,4 @@ cmd: ["scan", "-p", "/input", "-o", "/output", "--output-name", "out", "--report
 input_path: /input
 output_path: /output
 output_file: out.sarif
+parser: sarif

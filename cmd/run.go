@@ -69,7 +69,7 @@ func runRun(cmd *cobra.Command, args []string) {
 
 			pBar.IncrBy(80)
 
-			rep, err := results.ParseReport(content)
+			rep, err := results.ParseResults(content, exec.Tool.Parser)
 
 			if err != nil {
 				errCh <- err

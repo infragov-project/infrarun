@@ -4,3 +4,4 @@ cmd: ["--directory", "/input", "--output", "sarif", "--output-file-path", "/outp
 input_path: /input
 output_path: /output
 output_file: results_sarif.sarif
+parser: sarif
