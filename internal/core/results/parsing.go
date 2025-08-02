@@ -12,20 +12,14 @@ var parsers = map[string]ResultParser{
 	"sarif": parseJsonSARIF,
 }
 
-func ParseResults(data []byte, parserName string) (*sarif.Report, error) {
-	parser, ok := parsers[parserName]
+func GetParser(name string) (ResultParser, error) {
+	parser, ok := parsers[name]
 
 	if !ok {
-		return nil, fmt.Errorf("result parsing error: parser not found")
+		return nil, fmt.Errorf("parser not found")
 	}
 
-	report, err := parser(data)
-
-	if err != nil {
-		return nil, fmt.Errorf("result parsing error: %w", err)
-	}
-
-	return report, nil
+	return parser, nil
 }
 
 func parseJsonSARIF(data []byte) (*sarif.Report, error) {
