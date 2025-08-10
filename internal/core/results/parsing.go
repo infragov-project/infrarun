@@ -3,13 +3,15 @@ package results
 import (
 	"fmt"
 
+	"github.com/infragov-project/infrarun/internal/core/results/parsers/glitch"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 )
 
 type ResultParser func([]byte) (*sarif.Report, error)
 
 var parsers = map[string]ResultParser{
-	"sarif": parseJsonSARIF,
+	"sarif":  parseJsonSARIF,
+	"glitch": glitch.ParseGlitch,
 }
 
 func GetParser(name string) (ResultParser, error) {

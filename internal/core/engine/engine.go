@@ -2,6 +2,8 @@ package engine
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -71,7 +73,7 @@ func (engine *InfrarunEngine) Execute(ctx context.Context, toolExecution *ToolEx
 		})
 	}
 
-	err := engine.Backend.RunContainer(ctx, docker.ContainerInfo{
+	containerID, err := engine.Backend.RunContainer(ctx, docker.ContainerInfo{
 		Image:       toolExecution.Tool.Image,
 		Cmd:         toolExecution.Tool.Cmd,
 		VolumeBinds: volumeBinds,
@@ -82,12 +84,46 @@ func (engine *InfrarunEngine) Execute(ctx context.Context, toolExecution *ToolEx
 	}
 
 	if toolExecution.Tool.CaptureStdout {
-		// TODO: implement this case
+		data, err := engine.Backend.CaptureStdOut(ctx, containerID)
 
-		return make([]byte, 0), nil
+		if err != nil {
+			return nil, err
+		}
+
+		return extractStdoutFrames(data)
 	} else {
 		outputFilePath := filepath.Clean(outputDir + "/" + toolExecution.Tool.OutputFile)
 		return os.ReadFile(outputFilePath)
 	}
 
+}
+
+// This function processes docker's log format and extracts all stdout stream content.
+// This allows us to run the containers in non-TTY mode and still get the clean stdout
+// content.
+func extractStdoutFrames(data []byte) ([]byte, error) {
+	var out []byte
+	i := 0
+
+	for i < len(data) {
+		if len(data[i:]) < 8 {
+			return nil, fmt.Errorf("unexpected EOF in Docker log header")
+		}
+
+		streamType := data[i]
+		length := binary.BigEndian.Uint32(data[i+4 : i+8])
+		i += 8
+
+		if len(data[i:]) < int(length) {
+			return nil, fmt.Errorf("unexpected EOF in Docker log payload")
+		}
+
+		if streamType == 1 { // stdout
+			out = append(out, data[i:i+int(length)]...)
+		}
+
+		i += int(length)
+	}
+
+	return out, nil
 }

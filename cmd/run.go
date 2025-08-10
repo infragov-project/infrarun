@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 
@@ -73,12 +72,9 @@ func runRun(cmd *cobra.Command, args []string) {
 			rep, err := exec.Tool.Parser(content)
 
 			if err != nil {
-				fmt.Println(err)
 				errCh <- err
 				return
 			}
-
-			fmt.Println(len(content))
 
 			pBar.IncrBy(15)
 
