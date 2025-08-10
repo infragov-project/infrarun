@@ -3,29 +3,25 @@ package results
 import (
 	"fmt"
 
+	"github.com/infragov-project/infrarun/internal/core/results/parsers/glitch"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 )
 
 type ResultParser func([]byte) (*sarif.Report, error)
 
 var parsers = map[string]ResultParser{
-	"sarif": parseJsonSARIF,
+	"sarif":  parseJsonSARIF,
+	"glitch": glitch.ParseGlitch,
 }
 
-func ParseResults(data []byte, parserName string) (*sarif.Report, error) {
-	parser, ok := parsers[parserName]
+func GetParser(name string) (ResultParser, error) {
+	parser, ok := parsers[name]
 
 	if !ok {
-		return nil, fmt.Errorf("result parsing error: parser not found")
+		return nil, fmt.Errorf("parser not found")
 	}
 
-	report, err := parser(data)
-
-	if err != nil {
-		return nil, fmt.Errorf("result parsing error: %w", err)
-	}
-
-	return report, nil
+	return parser, nil
 }
 
 func parseJsonSARIF(data []byte) (*sarif.Report, error) {

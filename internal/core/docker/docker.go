@@ -68,7 +68,7 @@ type VolumeBind struct {
 	Guest string
 }
 
-func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo) error {
+func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo) (string, error) {
 
 	resp, err := engine.Client.ContainerCreate(ctx, &container.Config{
 		Image: info.Image,
@@ -79,7 +79,7 @@ func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo
 	}, nil, nil, "")
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	containerID := resp.ID
@@ -87,16 +87,34 @@ func (engine *DockerEngine) RunContainer(ctx context.Context, info ContainerInfo
 	err = engine.Client.ContainerStart(ctx, containerID, container.StartOptions{})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	statusCh, errCh := engine.Client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
 
 	select {
 	case error := <-errCh: // Got error from ContainerWait
-		return error
+		return "", error
 	case <-statusCh:
-		return nil
+		return containerID, nil
 	}
 
+}
+
+func (engine *DockerEngine) CaptureStdOut(ctx context.Context, containerID string) ([]byte, error) {
+	readCloser, err := engine.Client.ContainerLogs(ctx, containerID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: false,
+		Timestamps: false,
+		Follow:     false,
+		Details:    false,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer readCloser.Close()
+
+	return io.ReadAll(readCloser)
 }
