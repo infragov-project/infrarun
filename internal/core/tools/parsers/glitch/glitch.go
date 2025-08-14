@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -68,7 +69,12 @@ func toSarif(results []result) (*sarif.Report, error) {
 
 	for _, r := range results {
 
-		run.AddDistinctArtifact("file://" + r.FilePath)
+		u := url.URL{
+			Scheme: "file",
+			Path:   r.FilePath,
+		}
+
+		run.AddDistinctArtifact(u.String())
 
 		run.AddRule(r.Name).WithDescription(r.Description)
 

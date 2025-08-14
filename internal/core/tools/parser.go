@@ -3,7 +3,7 @@ package tools
 import (
 	"fmt"
 
-	"github.com/infragov-project/infrarun/internal/core/results/parsers/glitch"
+	"github.com/infragov-project/infrarun/internal/core/tools/parsers/glitch"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 )
 
