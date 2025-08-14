@@ -9,11 +9,13 @@ import (
 
 	"github.com/infragov-project/infrarun/internal/core/docker"
 	"github.com/infragov-project/infrarun/internal/core/tools"
+	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 )
 
 type ToolExecution struct {
 	Path string
 	Tool *tools.Tool
+	Report *sarif.Report
 }
 
 func NewToolExecution(tool *tools.Tool, path string) (*ToolExecution, error) {
