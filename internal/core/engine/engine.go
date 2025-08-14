@@ -13,8 +13,8 @@ import (
 )
 
 type ToolExecution struct {
-	Path string
-	Tool *tools.Tool
+	Path   string
+	Tool   *tools.Tool
 	Report *sarif.Report
 }
 
