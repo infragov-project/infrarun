@@ -79,9 +79,7 @@ func processPath(path *string, tool *tools.Tool) {
 			return
 		}
 
-		decodedPath = tool.ApplyOutputMappings(decodedPath)
-
-		u.Path = url.PathEscape(decodedPath)
+		u.Path = tool.ApplyOutputMappings(decodedPath)
 
 		*path = u.String()
 	} else {
