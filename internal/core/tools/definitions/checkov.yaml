@@ -1,9 +1,15 @@
 name: checkov
 image: bridgecrew/checkov
 cmd: ["--directory", "/input", "--output", "sarif", "--output-file-path", "/output"]
+
 input_path: /input
 output:
   type: file
   path: /output
   file: results_sarif.sarif
+
 parser: sarif
+
+output_mapping:
+  - pattern: "^input"
+    replacement: "."
