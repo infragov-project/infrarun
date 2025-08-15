@@ -10,6 +10,6 @@ output:
 
 parser: sarif
 
-output_mapping:
+path_transformation:
   - pattern: "^input"
     replacement: "."

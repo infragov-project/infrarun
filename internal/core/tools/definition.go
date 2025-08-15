@@ -20,13 +20,13 @@ func ToolFromYaml(content []byte) (*Tool, error) {
 }
 
 type toolDefinition struct {
-	Name           string                     `yaml:"name"`
-	Image          string                     `yaml:"image"`
-	Cmd            []string                   `yaml:"cmd"`
-	InputPath      string                     `yaml:"input_path"`
-	Output         outputWrapper              `yaml:"output"`
-	Parser         string                     `yaml:"parser"`
-	OutputMappings []outputMappingDeffinition `yaml:"output_mapping"`
+	Name                string                         `yaml:"name"`
+	Image               string                         `yaml:"image"`
+	Cmd                 []string                       `yaml:"cmd"`
+	InputPath           string                         `yaml:"input_path"`
+	Output              outputWrapper                  `yaml:"output"`
+	Parser              string                         `yaml:"parser"`
+	PathTransformations []pathTransformationDefinition `yaml:"path_transformation"`
 }
 
 func toolFromDefinition(definition toolDefinition) (*Tool, error) {
@@ -37,14 +37,14 @@ func toolFromDefinition(definition toolDefinition) (*Tool, error) {
 		InputPath: definition.InputPath,
 	}
 
-	for _, omDef := range definition.OutputMappings {
-		om, err := outputMappingFromDefinition(omDef)
+	for _, ptDef := range definition.PathTransformations {
+		om, err := outputMappingFromDefinition(ptDef)
 
 		if err != nil {
 			return nil, err
 		}
 
-		t.outputMappings = append(t.outputMappings, *om)
+		t.pathTransformations = append(t.pathTransformations, *om)
 	}
 
 	parser, err := GetParser(definition.Parser)
@@ -70,19 +70,19 @@ func toolFromDefinition(definition toolDefinition) (*Tool, error) {
 
 }
 
-type outputMappingDeffinition struct {
+type pathTransformationDefinition struct {
 	Pattern     string `yaml:"pattern"`
 	Replacement string `yaml:"replacement"`
 }
 
-func outputMappingFromDefinition(definition outputMappingDeffinition) (*OutputMapping, error) {
+func outputMappingFromDefinition(definition pathTransformationDefinition) (*PathTransformation, error) {
 	re, err := regexp.Compile(definition.Pattern)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &OutputMapping{
+	return &PathTransformation{
 		Pattern:     *re,
 		Replacement: definition.Replacement,
 	}, nil

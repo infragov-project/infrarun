@@ -79,11 +79,11 @@ func processPath(path *string, tool *tools.Tool) {
 			return
 		}
 
-		u.Path = tool.ApplyOutputMappings(decodedPath)
+		u.Path = tool.ApplyPathTransformations(decodedPath)
 
 		*path = u.String()
 	} else {
-		*path = tool.ApplyOutputMappings(*path)
+		*path = tool.ApplyPathTransformations(*path)
 	}
 }
 
