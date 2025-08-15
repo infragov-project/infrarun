@@ -7,6 +7,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func ToolFromYaml(content []byte) (*Tool, error) {
+	var def toolDefinition
+
+	err := yaml.Unmarshal(content, &def)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return toolFromDefinition(def)
+}
+
 type toolDefinition struct {
 	Name           string                     `yaml:"name"`
 	Image          string                     `yaml:"image"`

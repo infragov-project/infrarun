@@ -3,8 +3,6 @@ package tools
 import (
 	"embed"
 	"io/fs"
-
-	"gopkg.in/yaml.v3"
 )
 
 //go:embed definitions/*.yaml
@@ -26,21 +24,13 @@ func GetEmbedToolDefinitions() map[string]Tool {
 			continue
 		}
 
-		var definition toolDefinition
-
-		err = yaml.Unmarshal(yamlContent, &definition)
+		tl, err := ToolFromYaml(yamlContent)
 
 		if err != nil {
 			continue
 		}
 
-		tool, err := toolFromDefinition(definition)
-
-		if err != nil {
-			continue
-		}
-
-		tools[tool.Name] = *tool
+		tools[tl.Name] = *tl
 	}
 
 	return tools
