@@ -25,13 +25,15 @@ func toolFromDefinition(definition toolDefinition) (*Tool, error) {
 		InputPath: definition.InputPath,
 	}
 
-	outputMappings, err := outputMappingsFromDefinition(definition.OutputMappings)
+	for _, omDef := range definition.OutputMappings {
+		om, err := outputMappingFromDefinition(omDef)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		t.outputMappings = append(t.outputMappings, *om)
 	}
-
-	t.outputMappings = outputMappings
 
 	parser, err := GetParser(definition.Parser)
 
@@ -61,26 +63,17 @@ type outputMappingDeffinition struct {
 	Replacement string `yaml:"replacement"`
 }
 
-func outputMappingsFromDefinition(definitions []outputMappingDeffinition) ([]OutputMapping, error) {
-	res := make([]OutputMapping, 0)
+func outputMappingFromDefinition(definition outputMappingDeffinition) (*OutputMapping, error) {
+	re, err := regexp.Compile(definition.Pattern)
 
-	for _, def := range definitions {
-
-		re, err := regexp.Compile(def.Pattern)
-
-		if err != nil {
-			return nil, err
-		}
-
-		mapping := OutputMapping{
-			Pattern:     *re,
-			Replacement: def.Replacement,
-		}
-
-		res = append(res, mapping)
+	if err != nil {
+		return nil, err
 	}
 
-	return res, nil
+	return &OutputMapping{
+		Pattern:     *re,
+		Replacement: definition.Replacement,
+	}, nil
 }
 
 // Wrapper struct to allow custom yaml parsing for tagged union style objects
