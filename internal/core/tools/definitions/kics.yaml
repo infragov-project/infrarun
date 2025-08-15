@@ -1,9 +1,15 @@
 name: KICS
 image: checkmarx/kics:latest
 cmd: ["scan", "-p", "/input", "-o", "/output", "--output-name", "out", "--report-formats", "sarif"]
+
 input_path: /input
 output:
   type: file
   path: /output
   file: out.sarif
+
 parser: sarif
+
+output_mapping:
+  - pattern: "^\\.\\.\\/\\.\\.\\/input"
+    replacement: "."

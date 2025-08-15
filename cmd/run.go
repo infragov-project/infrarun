@@ -45,8 +45,6 @@ func runRun(cmd *cobra.Command, args []string) {
 		execs = append(execs, exec)
 	}
 
-	resultCh := make(chan *sarif.Report, len(execs))
-	errCh := make(chan error, len(execs))
 	progressBars := mpb.New(mpb.WithOutput(os.Stderr))
 	var wg sync.WaitGroup
 
@@ -63,7 +61,6 @@ func runRun(cmd *cobra.Command, args []string) {
 			content, err := eng.Execute(ctx, exec)
 
 			if err != nil {
-				errCh <- err
 				return
 			}
 
@@ -72,28 +69,27 @@ func runRun(cmd *cobra.Command, args []string) {
 			rep, err := exec.Tool.Parser(content)
 
 			if err != nil {
-				errCh <- err
 				return
 			}
 
 			pBar.IncrBy(15)
 
-			resultCh <- rep
+			exec.Report = rep
 		}()
 	}
 
 	wg.Wait()
 	progressBars.Wait()
 
-	close(resultCh)
+	reportMap := make(map[*tools.Tool]sarif.Report)
 
-	resultList := make([]*sarif.Report, 0)
-
-	for result := range resultCh {
-		resultList = append(resultList, result)
+	for _, exec := range execs {
+		if exec.Report != nil {
+			reportMap[exec.Tool] = *exec.Report
+		}
 	}
 
-	finalReport := results.MergeReports(resultList)
+	finalReport := results.GenerateFinalReport(reportMap)
 
 	err = finalReport.PrettyWrite(os.Stdout)
 

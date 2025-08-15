@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/infragov-project/infrarun/internal/core/tools"
 	"github.com/owenrumney/go-sarif/v3/pkg/report"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 )
@@ -20,38 +21,38 @@ func MergeReports(reports []*sarif.Report) *sarif.Report {
 	return merged
 }
 
-func ReplaceFilePaths(report *sarif.Report, prefixMap map[string]string) {
+func ReplaceFilePaths(report *sarif.Report, tool *tools.Tool) {
 	for _, run := range report.Runs {
 
 		for _, base := range run.OriginalUriBaseIds {
 			if base.URI != nil {
-				processPath(base.URI, prefixMap)
+				processPath(base.URI, tool)
 			}
 		}
 
 		for _, artifact := range run.Artifacts {
 			if artifact.Location != nil && artifact.Location.URI != nil {
-				processPath(artifact.Location.URI, prefixMap)
+				processPath(artifact.Location.URI, tool)
 			}
 		}
 
 		for _, res := range run.Results {
 			for _, loc := range res.Locations {
 				if loc.PhysicalLocation != nil && loc.PhysicalLocation.ArtifactLocation != nil && loc.PhysicalLocation.ArtifactLocation.URI != nil {
-					processPath(loc.PhysicalLocation.ArtifactLocation.URI, prefixMap)
+					processPath(loc.PhysicalLocation.ArtifactLocation.URI, tool)
 				}
 			}
 
 			for _, relLoc := range res.RelatedLocations {
 				if relLoc.PhysicalLocation != nil && relLoc.PhysicalLocation.ArtifactLocation != nil && relLoc.PhysicalLocation.ArtifactLocation.URI != nil {
-					processPath(relLoc.PhysicalLocation.ArtifactLocation.URI, prefixMap)
+					processPath(relLoc.PhysicalLocation.ArtifactLocation.URI, tool)
 				}
 			}
 
 			for _, fix := range res.Fixes {
 				for _, change := range fix.ArtifactChanges {
 					if change.ArtifactLocation != nil && change.ArtifactLocation.URI != nil {
-						processPath(change.ArtifactLocation.URI, prefixMap)
+						processPath(change.ArtifactLocation.URI, tool)
 					}
 				}
 			}
@@ -60,7 +61,7 @@ func ReplaceFilePaths(report *sarif.Report, prefixMap map[string]string) {
 	}
 }
 
-func processPath(path *string, prefixMap map[string]string) {
+func processPath(path *string, tool *tools.Tool) {
 	if path == nil {
 		return
 	}
@@ -78,22 +79,23 @@ func processPath(path *string, prefixMap map[string]string) {
 			return
 		}
 
-		replacePrefix(&decodedPath, prefixMap)
-
-		u.Path = url.PathEscape(decodedPath)
+		u.Path = tool.ApplyOutputMappings(decodedPath)
 
 		*path = u.String()
 	} else {
-		replacePrefix(path, prefixMap)
+		*path = tool.ApplyOutputMappings(*path)
 	}
 }
 
-func replacePrefix(uri *string, prefixMap map[string]string) {
+func GenerateFinalReport(reports map[*tools.Tool]sarif.Report) *sarif.Report {
 
-	for prefix, replacement := range prefixMap {
-		if strings.HasPrefix(*uri, prefix) {
-			*uri = replacement + strings.TrimPrefix(*uri, prefix)
-			return
-		}
+	newReps := make([]*sarif.Report, 0)
+
+	for t, r := range reports {
+		ReplaceFilePaths(&r, t)
+		newReps = append(newReps, &r)
 	}
+
+	return MergeReports(newReps)
+
 }

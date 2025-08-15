@@ -4,8 +4,8 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"regexp"
 
-	"github.com/infragov-project/infrarun/internal/core/results"
 	"gopkg.in/yaml.v3"
 )
 
@@ -64,23 +64,67 @@ func (w *outputWrapper) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type toolDefinition struct {
-	Name      string        `yaml:"name"`
-	Image     string        `yaml:"image"`
-	Cmd       []string      `yaml:"cmd"`
-	InputPath string        `yaml:"input_path"`
-	Output    outputWrapper `yaml:"output"`
-	Parser    string        `yaml:"parser"`
+	Name           string                     `yaml:"name"`
+	Image          string                     `yaml:"image"`
+	Cmd            []string                   `yaml:"cmd"`
+	InputPath      string                     `yaml:"input_path"`
+	Output         outputWrapper              `yaml:"output"`
+	Parser         string                     `yaml:"parser"`
+	OutputMappings []outputMappingDeffinition `yaml:"output_mapping"`
+}
+
+type outputMappingDeffinition struct {
+	Pattern     string `yaml:"pattern"`
+	Replacement string `yaml:"replacement"`
+}
+
+type OutputMapping struct {
+	Pattern     regexp.Regexp
+	Replacement string
 }
 
 type Tool struct {
-	Name          string
-	Image         string
-	Cmd           []string
-	InputPath     string
-	OutputPath    string
-	OutputFile    string
-	CaptureStdout bool // Will ignore OutputPath and OutputFile if true, since it uses stdout
-	Parser        results.ResultParser
+	Name           string
+	Image          string
+	Cmd            []string
+	InputPath      string
+	OutputPath     string
+	OutputFile     string
+	CaptureStdout  bool // Will ignore OutputPath and OutputFile if true, since it uses stdout
+	Parser         ResultParser
+	outputMappings []OutputMapping
+}
+
+func (t Tool) ApplyOutputMappings(path string) string {
+	for _, mapping := range t.outputMappings {
+		if mapping.Pattern.MatchString(path) {
+			return mapping.Pattern.ReplaceAllString(path, mapping.Replacement)
+		}
+	}
+
+	return path
+}
+
+func outputMappingsFromDefinition(definitions []outputMappingDeffinition) ([]OutputMapping, error) {
+	res := make([]OutputMapping, 0)
+
+	for _, def := range definitions {
+
+		re, err := regexp.Compile(def.Pattern)
+
+		if err != nil {
+			return nil, err
+		}
+
+		mapping := OutputMapping{
+			Pattern:     *re,
+			Replacement: def.Replacement,
+		}
+
+		res = append(res, mapping)
+	}
+
+	return res, nil
 }
 
 func toolFromDefinition(definition toolDefinition) (*Tool, error) {
@@ -91,7 +135,15 @@ func toolFromDefinition(definition toolDefinition) (*Tool, error) {
 		InputPath: definition.InputPath,
 	}
 
-	parser, err := results.GetParser(definition.Parser)
+	outputMappings, err := outputMappingsFromDefinition(definition.OutputMappings)
+
+	if err != nil {
+		return nil, err
+	}
+
+	t.outputMappings = outputMappings
+
+	parser, err := GetParser(definition.Parser)
 
 	if err != nil {
 		return nil, err
