@@ -14,6 +14,14 @@ type Tool struct {
 	impl *tools.Tool
 }
 
+func (t Tool) Name() string {
+	return t.impl.Name
+}
+
+func (t Tool) Image() string {
+	return t.impl.Image
+}
+
 func toolFromImpl(impl *tools.Tool) Tool {
 	return Tool{impl}
 }
