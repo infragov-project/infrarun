@@ -16,7 +16,7 @@ type ToolExecution struct {
 	Path   string
 	Tool   *tools.Tool
 	Report *sarif.Report
-	Err error
+	Err    error
 }
 
 func NewToolExecution(tool *tools.Tool, path string) (*ToolExecution, error) {

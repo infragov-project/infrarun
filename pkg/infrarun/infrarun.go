@@ -26,7 +26,7 @@ func toolFromImpl(impl *tools.Tool) Tool {
 	return Tool{impl}
 }
 
-func GetAvailableTools() (map[string]Tool) {
+func GetAvailableTools() map[string]Tool {
 	impls := tools.GetEmbedToolDefinitions()
 
 	t := make(map[string]Tool)
