@@ -1,7 +1,9 @@
-name: GLITCH
+name: GLITCH-puppet
 image: carlosfelgueiras/glitch:latest
 cmd: ["lint", "--tech", "puppet", "--linter", "/input"]
+
 input_path: /input
 output:
   type: stdout
+
 parser: glitch
