@@ -1,0 +1,9 @@
+name: GLITCH-ansible
+image: carlosfelgueiras/glitch:latest
+cmd: ["lint", "--tech", "ansible", "--linter", "/input"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: glitch

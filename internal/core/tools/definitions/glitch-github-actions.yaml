@@ -1,0 +1,9 @@
+name: GLITCH-github-actions
+image: carlosfelgueiras/glitch:latest
+cmd: ["lint", "--tech", "github-actions", "--linter", "/input"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: glitch

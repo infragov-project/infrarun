@@ -1,0 +1,9 @@
+name: GLITCH-terraform
+image: carlosfelgueiras/glitch:latest
+cmd: ["lint", "--tech", "terraform", "--linter", "/input"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: glitch
