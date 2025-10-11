@@ -1,0 +1,9 @@
+name: GLITCH-chef
+image: carlosfelgueiras/glitch:latest
+cmd: ["lint", "--tech", "chef", "--linter", "/input"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: glitch

@@ -1,0 +1,9 @@
+name: GLITCH-docker
+image: carlosfelgueiras/glitch:latest
+cmd: ["lint", "--tech", "docker", "--linter", "/input"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: glitch
