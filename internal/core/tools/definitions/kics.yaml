@@ -8,7 +8,7 @@ output:
   path: /output
   file: out.sarif
 
-parser: sarif
+parser: kics
 
 path_transformation:
   - pattern: "^\\.\\.\\/\\.\\.\\/input"
