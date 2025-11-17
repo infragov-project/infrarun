@@ -42,7 +42,7 @@ func runRun(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 
-		exec, err := engine.NewToolExecution(instance, path)
+		exec, err := engine.NewToolExecution(instance, path, "**/*")
 
 		if err != nil {
 			panic(err)

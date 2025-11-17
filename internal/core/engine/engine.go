@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -14,12 +15,13 @@ import (
 
 type ToolExecution struct {
 	Path   string
+	Glob   string
 	Tool   *tools.ToolInstance
 	Report *sarif.Report
 	Err    error
 }
 
-func NewToolExecution(tool *tools.ToolInstance, path string) (*ToolExecution, error) {
+func NewToolExecution(tool *tools.ToolInstance, path string, glob string) (*ToolExecution, error) {
 	absPath, err := filepath.Abs(path)
 
 	if err != nil {
@@ -28,6 +30,7 @@ func NewToolExecution(tool *tools.ToolInstance, path string) (*ToolExecution, er
 
 	return &ToolExecution{
 		Tool: tool,
+		Glob: glob,
 		Path: absPath,
 	}, nil
 }
@@ -53,8 +56,16 @@ func (engine *InfrarunEngine) Execute(ctx context.Context, toolExecution *ToolEx
 		return nil, err
 	}
 
+	inputTmpPath, err := prepareInputDir(toolExecution.Path, toolExecution.Glob)
+
+	defer os.Remove(inputTmpPath)
+
+	if err != nil {
+		return nil, err
+	}
+
 	volumeBinds := []docker.VolumeBind{
-		{Host: toolExecution.Path, Guest: toolExecution.Tool.InputPath},
+		{Host: inputTmpPath, Guest: toolExecution.Tool.InputPath},
 	}
 
 	outputDir := ""
@@ -129,4 +140,77 @@ func extractStdoutFrames(data []byte) ([]byte, error) {
 	}
 
 	return out, nil
+}
+
+func copyFile(src, dst string) error {
+	input, err := os.Open(src)
+
+	if err != nil {
+		return err
+	}
+
+	defer input.Close()
+
+	// Create intermediate directories if needed
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+
+	output, err := os.Create(dst)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(output, input)
+
+	return err
+}
+
+func prepareInputDir(basePath string, pattern string) (string, error) {
+	absBase, err := filepath.Abs(basePath)
+
+	if err != nil {
+		return "", err
+	}
+
+	fullPattern := filepath.Join(absBase, pattern)
+
+	files, err := filepath.Glob(fullPattern)
+
+	if err != nil {
+		return "", err
+	}
+
+	tmpDir, err := os.MkdirTemp("", "infrarun-input-")
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		info, err := os.Stat(file)
+
+		if err != nil {
+			return "", err
+		}
+
+		if info.IsDir() {
+			continue
+		}
+
+		relPath, err := filepath.Rel(absBase, file)
+
+		if err != nil {
+			return "", err
+		}
+
+		dst := filepath.Join(tmpDir, relPath)
+
+		if err := copyFile(file, dst); err != nil {
+			return "", err
+		}
+	}
+
+	return tmpDir, nil
 }

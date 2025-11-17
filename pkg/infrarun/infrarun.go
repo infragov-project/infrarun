@@ -77,7 +77,7 @@ func RunTools(toolList []*ToolInstance, path string) (*sarif.Report, error) {
 	execs := make([]*engine.ToolExecution, 0)
 
 	for _, t := range toolList {
-		exec, err := engine.NewToolExecution(t.impl, path)
+		exec, err := engine.NewToolExecution(t.impl, path, "**/*")
 
 		if err != nil {
 			return nil, err
