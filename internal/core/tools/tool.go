@@ -12,6 +12,7 @@ type Tool struct {
 	CaptureStdout       bool // Will ignore OutputPath and OutputFile if true, since it uses stdout
 	Parser              ResultParser
 	pathTransformations []PathTransformation
+	defaultValues       map[string]any
 }
 
 type PathTransformation struct {
@@ -27,8 +28,8 @@ func (pt PathTransformation) Apply(path string) (string, bool) {
 	return path, false
 }
 
-func (t Tool) ApplyPathTransformations(path string) string {
-	for _, transformation := range t.pathTransformations {
+func (t ToolInstance) ApplyPathTransformations(path string) string {
+	for _, transformation := range t.PathTransformations {
 		if new, matched := transformation.Apply(path); matched {
 			return new
 		}

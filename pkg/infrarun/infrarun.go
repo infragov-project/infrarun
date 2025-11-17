@@ -35,6 +35,14 @@ func toolFromImpl(impl *tools.Tool) Tool {
 	return Tool{impl}
 }
 
+type ToolInstance struct {
+	impl *tools.ToolInstance
+}
+
+func toolInstanceFromImpl(impl *tools.ToolInstance) ToolInstance {
+	return ToolInstance{impl}
+}
+
 // GetAvailableTools returns a map with all the infrarun [Tool] available in the current process.
 // This map has the [Tool]'s display name as the keys.
 func GetAvailableTools() map[string]Tool {
@@ -57,7 +65,7 @@ func GetAvailableTools() map[string]Tool {
 // [SARIF]: https://sarifweb.azurewebsites.net/
 //
 // [Docker Engine]: https://docs.docker.com/engine/
-func RunTools(toolList []*Tool, path string) (*sarif.Report, error) {
+func RunTools(toolList []*ToolInstance, path string) (*sarif.Report, error) {
 	ctx := context.Background()
 
 	eng, err := engine.NewInfrarunEngine()
@@ -108,7 +116,7 @@ func RunTools(toolList []*Tool, path string) (*sarif.Report, error) {
 
 	wg.Wait()
 
-	reports := make(map[*tools.Tool]sarif.Report)
+	reports := make(map[*tools.ToolInstance]sarif.Report)
 
 	for _, exec := range execs {
 		if exec.Err != nil {

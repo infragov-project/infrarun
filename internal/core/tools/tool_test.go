@@ -68,8 +68,8 @@ func TestApplyPathTransformations(t *testing.T) {
 	for _, tt := range tests {
 
 		t.Run(tt.Name, func(t *testing.T) {
-			tool := Tool{
-				pathTransformations: tt.Pt,
+			tool := ToolInstance{
+				PathTransformations: tt.Pt,
 			}
 
 			got := tool.ApplyPathTransformations(tt.In)

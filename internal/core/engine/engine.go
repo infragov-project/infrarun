@@ -14,12 +14,12 @@ import (
 
 type ToolExecution struct {
 	Path   string
-	Tool   *tools.Tool
+	Tool   *tools.ToolInstance
 	Report *sarif.Report
 	Err    error
 }
 
-func NewToolExecution(tool *tools.Tool, path string) (*ToolExecution, error) {
+func NewToolExecution(tool *tools.ToolInstance, path string) (*ToolExecution, error) {
 	absPath, err := filepath.Abs(path)
 
 	if err != nil {

@@ -36,7 +36,13 @@ func runRun(cmd *cobra.Command, args []string) {
 			panic("tool not found")
 		}
 
-		exec, err := engine.NewToolExecution(&tool, path)
+		instance, err := tool.DefaultInstance()
+
+		if err != nil {
+			panic(err)
+		}
+
+		exec, err := engine.NewToolExecution(instance, path)
 
 		if err != nil {
 			panic(err)
@@ -81,7 +87,7 @@ func runRun(cmd *cobra.Command, args []string) {
 	wg.Wait()
 	progressBars.Wait()
 
-	reportMap := make(map[*tools.Tool]sarif.Report)
+	reportMap := make(map[*tools.ToolInstance]sarif.Report)
 
 	for _, exec := range execs {
 		if exec.Report != nil {
