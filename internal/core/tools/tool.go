@@ -12,7 +12,7 @@ type Tool struct {
 	CaptureStdout       bool // Will ignore OutputPath and OutputFile if true, since it uses stdout
 	Parser              ResultParser
 	pathTransformations []PathTransformation
-	defaultValues       map[string]any
+	DefaultValues       map[string]any
 }
 
 type PathTransformation struct {

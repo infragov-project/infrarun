@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/infragov-project/infrarun/internal/core/utils"
 )
 
 type ToolInstance struct {
@@ -19,7 +21,7 @@ type ToolInstance struct {
 }
 
 func (t *Tool) DefaultInstance() (*ToolInstance, error) {
-	newCmd, err := patternFill(t.Cmd, t.defaultValues)
+	newCmd, err := patternFill(t.Cmd, t.DefaultValues)
 
 	if err != nil {
 		return nil, err
@@ -39,7 +41,7 @@ func (t *Tool) DefaultInstance() (*ToolInstance, error) {
 }
 
 func (t *Tool) ToInstance(params map[string]any) (*ToolInstance, error) {
-	fullParams := addDefaults(params, t.defaultValues)
+	fullParams := addDefaults(params, t.DefaultValues)
 
 	// TODO: allow other parts of tool definition to be parameterizable
 	newCmd, err := patternFill(t.Cmd, fullParams)
@@ -77,8 +79,14 @@ func patternFill(template []string, values map[string]any) ([]string, error) {
 			switch v := val.(type) {
 			case string:
 				result = append(result, v)
-			case []string:
-				result = append(result, v...)
+			case []any:
+				cast, ok := utils.SliceCast[string](v)
+
+				if !ok {
+					return nil, fmt.Errorf("unsupported type for placeholder value %q", name)
+				}
+
+				result = append(result, cast...)
 			default:
 				return nil, fmt.Errorf("unsupported type for placeholder value %q", name)
 			}
