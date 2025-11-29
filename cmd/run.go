@@ -5,9 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/infragov-project/infrarun/internal/core/engine"
-	"github.com/infragov-project/infrarun/internal/core/results"
-	"github.com/infragov-project/infrarun/internal/core/tools"
+	"github.com/infragov-project/infrarun/pkg/infrarun/plan"
+	"github.com/infragov-project/infrarun/pkg/infrarun/run"
+	"github.com/infragov-project/infrarun/pkg/infrarun/tool"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb"
@@ -15,93 +15,109 @@ import (
 )
 
 func runRun(cmd *cobra.Command, args []string) {
-	t := tools.GetEmbedToolDefinitions()
+	t := tool.GetAvailableTools()
 
-	eng, err := engine.NewInfrarunEngine()
-
-	ctx := context.Background()
-
-	path, _ := cmd.Flags().GetString("path")
+	path, err := cmd.Flags().GetString("path")
 
 	if err != nil {
 		panic(err)
 	}
 
-	execs := make([]*engine.ToolExecution, 0)
+	var p plan.Plan
 
 	for _, toolName := range args {
 		tool, ok := t[toolName]
 
 		if !ok {
-			panic("tool not found")
+			panic("tool not found: " + toolName)
 		}
 
-		instance, err := tool.DefaultInstance()
+		run, err := plan.NewSimpleRun(path, &tool)
 
 		if err != nil {
 			panic(err)
 		}
 
-		exec, err := engine.NewToolExecution(instance, path, "**/*")
-
-		if err != nil {
-			panic(err)
-		}
-
-		execs = append(execs, exec)
+		p.AddRun(run)
 	}
 
-	progressBars := mpb.New(mpb.WithOutput(os.Stderr))
-	var wg sync.WaitGroup
+	ctx := context.Background()
 
-	for _, exec := range execs {
-		wg.Add(1)
-		pBar := progressBars.AddBar(100, mpb.PrependDecorators(decor.Name(exec.Tool.Name)), mpb.AppendDecorators(decor.Percentage()))
+	obs := newObserver(&p)
 
-		go func() {
-			defer wg.Done()
-			defer pBar.SetTotal(100, true)
-
-			pBar.IncrBy(5)
-
-			content, err := eng.Execute(ctx, exec)
-
-			if err != nil {
-				return
-			}
-
-			pBar.IncrBy(80)
-
-			rep, err := exec.Tool.Parser(content)
-
-			if err != nil {
-				return
-			}
-
-			pBar.IncrBy(15)
-
-			exec.Report = rep
-		}()
-	}
-
-	wg.Wait()
-	progressBars.Wait()
-
-	reportMap := make(map[*tools.ToolInstance]sarif.Report)
-
-	for _, exec := range execs {
-		if exec.Report != nil {
-			reportMap[exec.Tool] = *exec.Report
-		}
-	}
-
-	finalReport := results.GenerateFinalReport(reportMap)
-
-	err = finalReport.PrettyWrite(os.Stdout)
+	rep, err := run.Run(ctx, p, run.WithObserver(obs))
 
 	if err != nil {
 		panic(err)
 	}
+
+	obs.progress.Wait()
+
+	err = rep.PrettyWrite(os.Stdout)
+
+	if err != nil {
+		panic(err)
+	}
+}
+
+type progressBarObserver struct {
+	mutex    *sync.Mutex
+	progress *mpb.Progress
+	plan     *plan.Plan
+	bars     map[*plan.Run]*mpb.Bar
+}
+
+func newObserver(p *plan.Plan) *progressBarObserver {
+	return &progressBarObserver{
+		mutex:    &sync.Mutex{},
+		progress: mpb.New(mpb.WithOutput(os.Stderr)),
+		plan:     p,
+		bars:     make(map[*plan.Run]*mpb.Bar),
+	}
+}
+
+func (o *progressBarObserver) OnPreparation() {
+	o.mutex.Lock()
+	for _, r := range o.plan.Runs {
+		o.bars[r] = o.progress.AddBar(100, mpb.PrependDecorators(decor.Name("test123")), mpb.AppendDecorators(decor.Percentage()))
+	}
+	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnRunStart(run *plan.Run) {
+	o.mutex.Lock()
+	bar, ok := o.bars[run]
+
+	if !ok {
+		return
+	}
+
+	bar.IncrBy(5)
+	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnRunCompletion(run *plan.Run, report *sarif.Report, err error) {
+	o.mutex.Lock()
+	bar, ok := o.bars[run]
+
+	if !ok {
+		return
+	}
+
+	bar.IncrBy(80)
+	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnRunParse(run *plan.Run) {
+	o.mutex.Lock()
+	bar, ok := o.bars[run]
+
+	if !ok {
+		return
+	}
+
+	bar.IncrBy(15)
+	o.mutex.Unlock()
 }
 
 // runCmd represents the run command

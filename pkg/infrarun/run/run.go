@@ -25,9 +25,9 @@ type runConfig struct {
 	observer RunObserver
 }
 
-func WithObserver(obs *RunObserver) Option {
+func WithObserver(obs RunObserver) Option {
 	return func(opt *runConfig) {
-		opt.observer = *obs
+		opt.observer = obs
 	}
 }
 
@@ -79,26 +79,26 @@ func Run(ctx context.Context, plan plan.Plan, opts ...Option) (*sarif.Report, er
 		go func() {
 			defer wg.Done()
 
-			config.observer.OnRunStart(&run)
+			config.observer.OnRunStart(run)
 			content, err := eng.Execute(ctx, exec)
 
 			if err != nil {
 				exec.Err = err
-				config.observer.OnRunCompletion(&run, nil, err)
+				config.observer.OnRunCompletion(run, nil, err)
 				return
 			}
 
-			config.observer.OnRunParse(&run)
+			config.observer.OnRunParse(run)
 			report, err := exec.Tool.Parser(content)
 
 			if err != nil {
 				exec.Err = err
-				config.observer.OnRunCompletion(&run, nil, err)
+				config.observer.OnRunCompletion(run, nil, err)
 				return
 			}
 
 			exec.Report = report
-			config.observer.OnRunCompletion(&run, report, nil)
+			config.observer.OnRunCompletion(run, report, nil)
 		}()
 	}
 

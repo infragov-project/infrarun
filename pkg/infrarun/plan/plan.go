@@ -6,7 +6,7 @@ import (
 )
 
 type Plan struct {
-	Runs []Run
+	Runs []*Run
 }
 
 type Run struct {
@@ -53,6 +53,6 @@ func NewSimpleRun(path string, tool *tool.Tool) (*Run, error) {
 	return NewRunWithDefaultOptions(path, "**/*", tool)
 }
 
-func (p *Plan) AddRun(run Run) {
+func (p *Plan) AddRun(run *Run) {
 	p.Runs = append(p.Runs, run)
 }
