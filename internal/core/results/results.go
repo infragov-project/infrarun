@@ -21,7 +21,7 @@ func MergeReports(reports []*sarif.Report) *sarif.Report {
 	return merged
 }
 
-func ReplaceFilePaths(report *sarif.Report, tool *tools.Tool) {
+func ReplaceFilePaths(report *sarif.Report, tool *tools.ToolInstance) {
 	for _, run := range report.Runs {
 
 		for _, base := range run.OriginalUriBaseIds {
@@ -61,7 +61,7 @@ func ReplaceFilePaths(report *sarif.Report, tool *tools.Tool) {
 	}
 }
 
-func processPath(path *string, tool *tools.Tool) {
+func processPath(path *string, tool *tools.ToolInstance) {
 	if path == nil {
 		return
 	}
@@ -87,7 +87,7 @@ func processPath(path *string, tool *tools.Tool) {
 	}
 }
 
-func GenerateFinalReport(reports map[*tools.Tool]sarif.Report) *sarif.Report {
+func GenerateFinalReport(reports map[*tools.ToolInstance]sarif.Report) *sarif.Report {
 
 	newReps := make([]*sarif.Report, 0)
 

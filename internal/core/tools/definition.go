@@ -27,14 +27,16 @@ type toolDefinition struct {
 	Output              outputWrapper                  `yaml:"output"`
 	Parser              string                         `yaml:"parser"`
 	PathTransformations []pathTransformationDefinition `yaml:"path_transformation"`
+	DefaultOptions      map[string]any                 `yaml:"default_options"`
 }
 
 func toolFromDefinition(definition toolDefinition) (*Tool, error) {
 	t := &Tool{
-		Name:      definition.Name,
-		Image:     definition.Image,
-		Cmd:       definition.Cmd,
-		InputPath: definition.InputPath,
+		Name:          definition.Name,
+		Image:         definition.Image,
+		Cmd:           definition.Cmd,
+		InputPath:     definition.InputPath,
+		DefaultValues: definition.DefaultOptions,
 	}
 
 	for _, ptDef := range definition.PathTransformations {
