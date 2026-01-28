@@ -79,7 +79,7 @@ func newObserver(p *plan.Plan) *progressBarObserver {
 func (o *progressBarObserver) OnPreparation() {
 	o.mutex.Lock()
 	for _, r := range o.plan.Runs {
-		o.bars[r] = o.progress.AddBar(100, mpb.PrependDecorators(decor.Name("test123")), mpb.AppendDecorators(decor.Percentage()))
+		o.bars[r] = o.progress.AddBar(100, mpb.PrependDecorators(decor.Name(r.ToolName())), mpb.AppendDecorators(decor.Percentage()))
 	}
 	o.mutex.Unlock()
 }
