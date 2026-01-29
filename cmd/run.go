@@ -76,7 +76,7 @@ func runRun(cmd *cobra.Command, args []string) {
 
 	obs.progress.Wait()
 
-	err = rep.PrettyWrite(os.Stdout)
+	err = printRaw(rep, os.Stdout)
 
 	if err != nil {
 		panic(err)
@@ -186,6 +186,12 @@ func (o *progressBarObserver) OnRunParse(run *plan.Run) {
 
 	bar.IncrBy(70)
 	o.mutex.Unlock()
+}
+
+type ReportPrinter func(rep *sarif.Report, writer io.Writer) error
+
+func printRaw(rep *sarif.Report, writer io.Writer) error {
+	return rep.PrettyWrite(writer)
 }
 
 // runCmd represents the run command
