@@ -1,6 +1,16 @@
 name: GLITCH-ansible
 image: carlosfelgueiras/glitch:latest
-cmd: ["lint", "--tech", "%{tech}", "--linter", "%{args}", "/input"]
+cmd:
+  [
+    "lint",
+    "--tech",
+    "%{tech}",
+    "--linter",
+    "--folder-strategy",
+    "include-all",
+    "%{args}",
+    "/input",
+  ]
 
 input_path: /input
 output:

@@ -13,10 +13,13 @@ import (
 
 // Warning: Observer methods might be called in concurrent environment, watch for race conditions
 type RunObserver interface {
-	OnPreparation()
+	OnEnginePreparation()
+	OnEngineFailure(err error)
 	OnRunStart(run *plan.Run)
+	OnRunFail(run *plan.Run, err error)
 	OnRunParse(run *plan.Run)
-	OnRunCompletion(run *plan.Run, report *sarif.Report, err error)
+	OnRunParseFail(run *plan.Run, err error)
+	OnRunCompletion(run *plan.Run, report *sarif.Report)
 }
 
 type Option func(*runConfig)
@@ -39,13 +42,19 @@ func defaultRunConfig() runConfig {
 
 type emptyRunObserver struct{}
 
-func (o emptyRunObserver) OnPreparation() {}
+func (o emptyRunObserver) OnEnginePreparation() {}
+
+func (o emptyRunObserver) OnEngineFailure(err error) {}
 
 func (o emptyRunObserver) OnRunStart(run *plan.Run) {}
 
-func (o emptyRunObserver) OnRunCompletion(run *plan.Run, report *sarif.Report, err error) {}
+func (o emptyRunObserver) OnRunFail(run *plan.Run, err error) {}
 
 func (o emptyRunObserver) OnRunParse(run *plan.Run) {}
+
+func (o emptyRunObserver) OnRunParseFail(run *plan.Run, err error) {}
+
+func (o emptyRunObserver) OnRunCompletion(run *plan.Run, report *sarif.Report) {}
 
 // Run returns a [SARIF] report with the outputs of the execution of all tools in toolList when running inside path.
 // In case something fails, it will return a nil report with a non-nil error.
@@ -62,11 +71,12 @@ func Run(ctx context.Context, plan plan.Plan, opts ...Option) (*sarif.Report, er
 		opt(&config)
 	}
 
-	config.observer.OnPreparation()
+	config.observer.OnEnginePreparation()
 
 	eng, err := engine.NewInfrarunEngine()
 
 	if err != nil {
+		config.observer.OnEngineFailure(err)
 		return nil, err
 	}
 
@@ -84,7 +94,7 @@ func Run(ctx context.Context, plan plan.Plan, opts ...Option) (*sarif.Report, er
 
 			if err != nil {
 				exec.Err = err
-				config.observer.OnRunCompletion(run, nil, err)
+				config.observer.OnRunFail(run, err)
 				return
 			}
 
@@ -93,12 +103,12 @@ func Run(ctx context.Context, plan plan.Plan, opts ...Option) (*sarif.Report, er
 
 			if err != nil {
 				exec.Err = err
-				config.observer.OnRunCompletion(run, nil, err)
+				config.observer.OnRunParseFail(run, err)
 				return
 			}
 
 			exec.Report = report
-			config.observer.OnRunCompletion(run, report, nil)
+			config.observer.OnRunCompletion(run, report)
 		}()
 	}
 
