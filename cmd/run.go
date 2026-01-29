@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/infragov-project/infrarun/pkg/infrarun/plan"
 	"github.com/infragov-project/infrarun/pkg/infrarun/run"
 	"github.com/infragov-project/infrarun/pkg/infrarun/tool"
+	"github.com/olekukonko/tablewriter"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb"
@@ -76,7 +80,7 @@ func runRun(cmd *cobra.Command, args []string) {
 
 	obs.progress.Wait()
 
-	err = printRaw(rep, os.Stdout)
+	err = prettyPrint(rep, os.Stdout)
 
 	if err != nil {
 		panic(err)
@@ -194,6 +198,119 @@ func printRaw(rep *sarif.Report, writer io.Writer) error {
 	return rep.PrettyWrite(writer)
 }
 
+func prettyPrint(rep *sarif.Report, writer io.Writer) error {
+	for _, run := range rep.Runs {
+		if len(run.Results) == 0 {
+			continue
+		}
+
+		tool := run.Tool.Driver.FullName
+		if tool == nil {
+			tool = run.Tool.Driver.Name
+		}
+		fmt.Fprintf(writer, "\n\n\n%s\n", *tool)
+
+		version := run.Tool.Driver.Version
+		if version != nil {
+			fmt.Fprintf(writer, "%s\n", *version)
+		}
+
+		uri := run.Tool.Driver.InformationURI
+		if uri != nil {
+			fmt.Fprintf(writer, "Information URI: %s\n", *uri)
+		}
+
+		fmt.Fprintf(writer, "\n")
+		table := tablewriter.NewWriter(writer)
+		table.Header("File", "Start Line", "End Line", "Rule ID", "Message")
+
+		// A list of valid and sorted results
+		processed := run.Results[:0]
+		for _, result := range run.Results {
+			// File location
+			if len(result.Locations) == 0 || result.Locations[0].PhysicalLocation == nil || result.Locations[0].PhysicalLocation.ArtifactLocation == nil || result.Locations[0].PhysicalLocation.ArtifactLocation.URI == nil {
+				continue
+			}
+			// Start line
+			if result.Locations[0].PhysicalLocation.Region == nil || result.Locations[0].PhysicalLocation.Region.StartLine == nil {
+				continue
+			}
+			// Rule ID
+			if result.RuleID == nil {
+				continue
+			}
+			processed = append(processed, result)
+		}
+
+		sorted := run.Results
+		sort.Slice(sorted, func(i, j int) bool {
+			// Results are sorted by the file name and then by the start line
+			fileI := *sorted[i].Locations[0].PhysicalLocation.ArtifactLocation.URI
+			fileJ := *sorted[j].Locations[0].PhysicalLocation.ArtifactLocation.URI
+
+			if fileI != fileJ {
+				return fileI < fileJ
+			}
+
+			startLineI := *sorted[i].Locations[0].PhysicalLocation.Region.StartLine
+			startLineJ := *sorted[j].Locations[0].PhysicalLocation.Region.StartLine
+
+			return startLineI < startLineJ
+		})
+
+		for _, result := range sorted {
+			// Get file location
+			if len(result.Locations) == 0 || result.Locations[0].PhysicalLocation == nil || result.Locations[0].PhysicalLocation.ArtifactLocation == nil || result.Locations[0].PhysicalLocation.ArtifactLocation.URI == nil {
+				continue
+			}
+			file := *result.Locations[0].PhysicalLocation.ArtifactLocation.URI
+
+			// Get start line
+			if result.Locations[0].PhysicalLocation.Region == nil || result.Locations[0].PhysicalLocation.Region.StartLine == nil {
+				continue
+			}
+			startLine := *result.Locations[0].PhysicalLocation.Region.StartLine
+
+			// Get end line
+			endLine := -1
+			if result.Locations[0].PhysicalLocation.Region.EndLine != nil {
+				endLine = *result.Locations[0].PhysicalLocation.Region.EndLine
+			}
+
+			// Get rule ID
+			if result.RuleID == nil {
+				continue
+			}
+			ruleId := *result.RuleID
+
+			// Get message
+			message := ""
+			if result.Message != nil && result.Message.Text != nil {
+				message = *result.Message.Text
+				message = truncate(removeWhitespace(message), 50)
+			}
+
+			var endLineStr string
+			if endLine == -1 {
+				endLineStr = "-"
+			} else {
+				endLineStr = fmt.Sprintf("%d", endLine)
+			}
+
+			err := table.Append(file, startLine, endLineStr, ruleId, truncate(message, 50))
+			if err != nil {
+				return err
+			}
+		}
+
+		err := table.Render()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -207,4 +324,21 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	runCmd.Flags().StringP("path", "p", ".", "path to run the tools at")
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
+}
+
+// Removes all whitespace characters except spaces from a string
+func removeWhitespace(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) && r != ' ' {
+			return -1
+		}
+		return r
+	}, s)
 }
