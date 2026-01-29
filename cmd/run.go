@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"sync"
 
@@ -13,6 +15,27 @@ import (
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
+
+type filler struct{}
+
+func (f filler) Fill(w io.Writer, width int, stat *decor.Statistics) {
+	completed := int(float64(width) * float64(stat.Current) / float64(stat.Total))
+	for range completed {
+		_, err := fmt.Fprint(w, "\033[32m─\033[0m") // green
+
+		if err != nil {
+			return
+		}
+	}
+	// Fill the rest with empty blocks
+	for i := completed; i < width; i++ {
+		_, err := fmt.Fprint(w, "─")
+
+		if err != nil {
+			return
+		}
+	}
+}
 
 func runRun(cmd *cobra.Command, args []string) {
 	t := tool.GetAvailableTools()
@@ -76,12 +99,33 @@ func newObserver(p *plan.Plan) *progressBarObserver {
 	}
 }
 
-func (o *progressBarObserver) OnPreparation() {
+func (o *progressBarObserver) OnEnginePreparation() {
 	o.mutex.Lock()
 	for _, r := range o.plan.Runs {
-		o.bars[r] = o.progress.AddBar(100, mpb.PrependDecorators(decor.Name("test123")), mpb.AppendDecorators(decor.Percentage()))
+		o.bars[r] = o.progress.Add(
+			100,
+			filler{},
+			mpb.PrependDecorators(decor.Name(r.ToolName()+"\t")),
+			mpb.AppendDecorators(decor.Percentage()),
+		)
+		//o.bars[r] = o.progress.AddBar(100, mpb.PrependDecorators(decor.Name(r.ToolName())), mpb.AppendDecorators(decor.Percentage()))
 	}
 	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnEngineFailure(err error) {
+	o.mutex.Lock()
+	for _, r := range o.plan.Runs {
+		bar, ok := o.bars[r]
+
+		if !ok {
+			continue
+		}
+
+		bar.SetTotal(100, true)
+	}
+
+	panic(err)
 }
 
 func (o *progressBarObserver) OnRunStart(run *plan.Run) {
@@ -96,7 +140,7 @@ func (o *progressBarObserver) OnRunStart(run *plan.Run) {
 	o.mutex.Unlock()
 }
 
-func (o *progressBarObserver) OnRunCompletion(run *plan.Run, report *sarif.Report, err error) {
+func (o *progressBarObserver) OnRunCompletion(run *plan.Run, report *sarif.Report) {
 	o.mutex.Lock()
 	bar, ok := o.bars[run]
 
@@ -104,7 +148,31 @@ func (o *progressBarObserver) OnRunCompletion(run *plan.Run, report *sarif.Repor
 		return
 	}
 
-	bar.IncrBy(80)
+	bar.SetTotal(100, true)
+	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnRunFail(run *plan.Run, err error) {
+	o.mutex.Lock()
+	bar, ok := o.bars[run]
+
+	if !ok {
+		return
+	}
+
+	bar.SetTotal(100, true)
+	o.mutex.Unlock()
+}
+
+func (o *progressBarObserver) OnRunParseFail(run *plan.Run, err error) {
+	o.mutex.Lock()
+	bar, ok := o.bars[run]
+
+	if !ok {
+		return
+	}
+
+	bar.SetTotal(100, true)
 	o.mutex.Unlock()
 }
 
@@ -116,7 +184,7 @@ func (o *progressBarObserver) OnRunParse(run *plan.Run) {
 		return
 	}
 
-	bar.IncrBy(15)
+	bar.IncrBy(70)
 	o.mutex.Unlock()
 }
 

@@ -12,6 +12,8 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
+# Ensure that changes in the repo lead to cache invalidation
+ADD https://api.github.com/repos/sr-lab/GLITCH/git/refs/heads/interactive_repair version.json
 RUN git clone https://github.com/sr-lab/GLITCH.git
 
 WORKDIR /app/GLITCH

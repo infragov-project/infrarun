@@ -56,3 +56,7 @@ func NewSimpleRun(path string, tool *tool.Tool) (*Run, error) {
 func (p *Plan) AddRun(run *Run) {
 	p.Runs = append(p.Runs, run)
 }
+
+func (r *Run) ToolName() string {
+	return r.Impl.Tool.Name
+}
