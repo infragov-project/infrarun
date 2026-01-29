@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/infragov-project/infrarun/internal/core/docker"
 	"github.com/infragov-project/infrarun/internal/core/tools"
 	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
@@ -176,7 +177,7 @@ func prepareInputDir(basePath string, pattern string) (string, error) {
 
 	fullPattern := filepath.Join(absBase, pattern)
 
-	files, err := filepath.Glob(fullPattern)
+	files, err := doublestar.Glob(fullPattern)
 
 	if err != nil {
 		return "", err

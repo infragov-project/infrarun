@@ -3,6 +3,7 @@ module github.com/infragov-project/infrarun
 go 1.24.5
 
 require (
+	github.com/bmatcuk/doublestar v1.3.4
 	github.com/docker/docker v28.3.2+incompatible
 	github.com/olekukonko/tablewriter v1.0.9
 	github.com/owenrumney/go-sarif/v3 v3.2.1
