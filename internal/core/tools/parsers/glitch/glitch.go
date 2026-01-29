@@ -14,14 +14,13 @@ type result struct {
 	Description string
 	FilePath    string
 	Line        int
-	Name        string
+	Code        string
 	Context     string
-	Note        string
 }
 
 func parseResult(line string) (*result, error) {
 
-	split := strings.SplitN(line, ",", 7)
+	split := strings.SplitN(line, ",", 6)
 
 	if len(split) < 6 {
 		return nil, fmt.Errorf("invalid line: %s", line)
@@ -37,9 +36,8 @@ func parseResult(line string) (*result, error) {
 		Description: split[0],
 		FilePath:    split[1],
 		Line:        lineNo,
-		Name:        split[3],
-		Context:     split[4],
-		Note:        split[5],
+		Code:        split[3],
+		Context:     split[5],
 	}, nil
 
 }
@@ -76,9 +74,9 @@ func toSarif(results []result) (*sarif.Report, error) {
 
 		run.AddDistinctArtifact(u.String())
 
-		run.AddRule(r.Name).WithDescription(r.Description)
+		run.AddRule(r.Code).WithDescription(r.Description)
 
-		run.CreateResultForRule(r.Name).
+		run.CreateResultForRule(r.Code).
 			WithLevel("warning").
 			WithMessage(sarif.NewTextMessage(r.Context)).
 			AddLocation(
