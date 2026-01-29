@@ -1,0 +1,9 @@
+name: depends_off
+image: depends_off
+cmd: ["/input", "--sarif"]
+
+input_path: /input
+output:
+  type: stdout
+
+parser: sarif
