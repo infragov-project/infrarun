@@ -1,5 +1,5 @@
 name: depends_off
-image: depends_off
+image: carlosfelgueiras/depends_off:latest
 cmd: ["/input", "--sarif"]
 
 input_path: /input
